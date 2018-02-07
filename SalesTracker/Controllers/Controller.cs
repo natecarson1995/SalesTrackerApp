@@ -264,8 +264,12 @@ namespace SalesTracker
             //
             // build out the output string
             //
+            sb.AppendLine("Salesperson");
             sb.AppendLine(_salesPerson.Serialize());
+            sb.AppendLine("Product");
             sb.AppendLine(_salesPerson.CurrentStock.Serialize());
+            sb.AppendLine("Cities");
+            sb.AppendLine(_salesPerson.CitiesVisited.Serialize());
             
 
             //
@@ -281,7 +285,20 @@ namespace SalesTracker
         /// </summary>
         private void LoadAccountInfo()
         {
-            //TODO
+            StreamReader sr = new StreamReader("AccountInfo/Data.csv");
+            Queue<string> textLines = new Queue<string>();
+
+            using (sr)
+            {
+                while (!sr.EndOfStream)
+                    textLines.Enqueue(sr.ReadLine());
+            }
+
+            textLines.Dequeue();
+            _salesPerson.Deserialize(textLines.Dequeue());
+
+            textLines.Dequeue();
+
         }
         /// <summary>
         /// Calls the view inventory display
