@@ -23,11 +23,10 @@ namespace SalesTracker
             //
             // build out string
             //
-            foreach (var kv in dict)
+            foreach (var key in dict.Keys)
             {
-                sb.AppendLine(kv.Key + "," + kv.Value.Serialize());
+                sb.AppendLine(key + "," + dict[key].Serialize());
             }
-
             return sb.ToString();
         }
 
@@ -69,12 +68,12 @@ namespace SalesTracker
             //
             // build out string
             //
-            sb.Append(city.DateArrive + ","
-                + city.DateDepart+ ","
-                + city.Name + ","
-                + city.ProductsBought + ","
-                + city.ProductsSold + ","
-                );
+
+            sb.Append(city.DateArrive.Ticks + ",");
+            sb.Append(city.DateDepart.Ticks + ",");
+            sb.Append(city.Name + ",");
+            sb.Append(city.ProductsBought + ",");
+            sb.Append(city.ProductsSold+",");
 
             foreach (string company in city.CompaniesVisited)
             {
@@ -100,13 +99,14 @@ namespace SalesTracker
             //
             // build out string
             //
-            sb.Append(product.Color + ","
-                + product.ModelName + ","
-                + product.NumberOfUnits + ","
-                + product.Price + ","
-                + product.Type);
 
-            return sb.ToString();
+            sb.Append(product.Color+ ",");
+            sb.Append(product.ModelName + ",");
+            sb.Append(product.NumberOfUnits+ ",");
+            sb.Append(product.Price + ",");
+            sb.Append(product.Type);
+
+            return sb.ToString().TrimEnd();
         }
 
         /// <summary>
@@ -124,11 +124,11 @@ namespace SalesTracker
             //
             // build out string
             //
-            sb.Append(salesperson.AccountID + ","
-                + salesperson.Age + ","
-                + salesperson.FirstName + ","
-                + salesperson.LastName + ","
-                + salesperson.Rank);
+            sb.Append(salesperson.AccountID + ",");
+            sb.Append(salesperson.Age + ",");
+            sb.Append(salesperson.FirstName + ",");
+            sb.Append(salesperson.LastName + ",");
+            sb.Append(salesperson.Rank);
 
             return sb.ToString();
         }
@@ -147,6 +147,9 @@ namespace SalesTracker
             int age;
             Salesperson.Ranks rank;
 
+            if (!serializedString.Contains(','))
+                throw new Exception("Invalid salesman format");
+
             string[] parameters = serializedString.Split(',');
 
             if (parameters.Length < 4)
@@ -155,15 +158,18 @@ namespace SalesTracker
             //
             // validate the text file
             //
-            if (int.TryParse(parameters[0], out age))
+
+            salesperson.AccountID = parameters[0];
+
+            if (int.TryParse(parameters[1], out age))
                 salesperson.Age = age;
             else
                 throw new Exception("Invalid or missing salesman age");
 
-            salesperson.FirstName = parameters[1];
-            salesperson.LastName = parameters[2];
+            salesperson.FirstName = parameters[2];
+            salesperson.LastName = parameters[3];
 
-            if (Enum.TryParse<Salesperson.Ranks>(parameters[3], out rank))
+            if (Enum.TryParse<Salesperson.Ranks>(parameters[4], out rank))
                 salesperson.Rank = rank;
             else
                 throw new Exception("Invalid or missing salesman rank");
@@ -173,10 +179,127 @@ namespace SalesTracker
 
         public static bool Deserialize(this Product product, string serializedString)
         {
+            int quantity;
+            double price;
+            Product.ProductType type;
+
+            if (!serializedString.Contains(','))
+                throw new Exception("Invalid product format");
+            //
+            // split up string into parameters
+            //
+            string[] parameters = serializedString.Split(',');
+            if (parameters.Length<5)
+                throw new Exception("Invalid product parameters");
+
+            //
+            // validate and set parameters
+            //
+            product.Color = parameters[0];
+            product.ModelName = parameters[1];
+
+            if (int.TryParse(parameters[2], out quantity))
+                product.NumberOfUnits = quantity;
+            else
+                throw new Exception("Invalid product quantity");
             
+            if (double.TryParse(parameters[3], out price))
+                product.Price = price;
+            else
+                throw new Exception("Invalid product price");
+
+            if (Enum.TryParse<Product.ProductType>(parameters[4], out type))
+                product.Type = type;
+            else
+                throw new Exception("Invalid product type");
 
             return true;
         }
+
+        public static bool Deserialize(this City city, string serializedString)
+        {
+            //
+            // initialize variables
+            //
+            long arrival;
+            long departure;
+            int productsBought;
+            int productsSold;
+
+            if (!serializedString.Contains(','))
+                throw new Exception("Invalid city format");
+
+            string[] parameters = serializedString.Split(',');
+            if (parameters.Length < 5)
+                throw new Exception("Invalid city parameters");
+
+            //
+            // parse out and validate parameters
+            //
+            if (long.TryParse(parameters[0], out arrival))
+                city.DateArrive = new DateTime(arrival);
+            else
+                throw new Exception("Invalid city arrival date");
+
+            if (long.TryParse(parameters[1], out departure))
+            {
+                //
+                // If they haven't departed yet, dont put a departure date in
+                //
+                if (departure == 0) city.DateDepart = default(DateTime);
+                else city.DateDepart = new DateTime(departure);
+            }
+            else
+                throw new Exception("Invalid city departure date");
+
+            city.Name = parameters[2];
+
+            if (int.TryParse(parameters[3], out productsBought))
+                city.BuyProducts(productsBought);
+
+            if (int.TryParse(parameters[4], out productsSold))
+                city.SellProducts(productsSold);
+
+            for (int i=5;i<parameters.Length;i++)
+            {
+                city.CompaniesVisited.Add(parameters[i]);
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Deserializes a string containing a list of cities visited
+        /// </summary>
+        /// <param name="cities"></param>
+        /// <param name="serializedString"></param>
+        /// <returns></returns>
+        public static bool Deserialize(this List<City> cities, string serializedString)
+        {
+            //
+            // dont try to iterate an empty string
+            //
+            if (serializedString == "" || !serializedString.Contains('\n'))
+                return true;
+
+            //
+            // go through different cities
+            //
+            string[] lines = serializedString.TrimEnd().Split('\n');
+
+            foreach (string line in lines)
+            {
+                //
+                // set up new city object for each line, and add to the cities visited
+                //
+                City city = new City("");
+                city.Deserialize(line);
+                cities.Add(city);
+            }
+
+            return true;
+        }
+
         /// <summary>
         /// Deserializes a string containing a dictionary of products
         /// </summary>
@@ -186,9 +309,15 @@ namespace SalesTracker
         public static bool Deserialize(this Dictionary<Product.ProductType,Product> dict, string serializedString)
         {
             //
+            // dont try to iterate an empty string
+            //
+            if (serializedString == "" || !serializedString.Contains('\n'))
+                return true;
+
+            //
             // go through different products
             //
-            string[] lines = serializedString.Split('\n');
+            string[] lines = serializedString.TrimEnd().Split('\n');
 
             foreach (string line in lines)
             {
@@ -200,8 +329,23 @@ namespace SalesTracker
 
                 if (!Enum.TryParse<Product.ProductType>(line.Substring(0, firstComma), out key))
                     throw new Exception("Invalid product type");
+                else
+                {
+                    //
+                    // deserialize each product
+                    //
+                    Product p = new Product();
+                    p.Deserialize(line.Substring(firstComma + 1).Trim());
 
-                dict[key].Deserialize(line.Substring(firstComma + 1));
+                    //
+                    // either add or set the value in the dictionary
+                    //
+                    if (dict.ContainsKey(key))
+                        dict[key] = p;
+                    else
+                        dict.Add(key, p);
+
+                }
             }
 
             return true;

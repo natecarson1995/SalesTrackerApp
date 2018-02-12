@@ -190,6 +190,7 @@ namespace SalesTracker
         {
             bool validResponse = false;
             int userAge = 0;
+            string userResponse;
             Salesperson.Ranks rank;
             //
             // set up the console
@@ -200,25 +201,41 @@ namespace SalesTracker
             //
             // get new account info
             //
-            ConsoleUtil.DisplayPromptMessage("First name: ");
-            salesperson.FirstName = Console.ReadLine();
+            ConsoleUtil.DisplayMessage("Just press enter if you wish to skip the current field");
+            ConsoleUtil.DisplayMessage("");
+
+            ConsoleUtil.DisplayMessage($"First Name: {salesperson.FirstName}");
+
+            userResponse = Console.ReadLine();
+            if (userResponse != "")
+                salesperson.FirstName = userResponse;
+
             Console.WriteLine("");
 
-            ConsoleUtil.DisplayPromptMessage("Last name: ");
-            salesperson.LastName = Console.ReadLine();
+            ConsoleUtil.DisplayMessage($"Last Name: {salesperson.LastName}");
+
+            userResponse = Console.ReadLine();
+            if (userResponse != "")
+                salesperson.LastName = userResponse;
+
             Console.WriteLine("");
 
-            ConsoleUtil.DisplayMessage("Age");
-            validResponse = ConsoleValidator.TryGetIntegerFromUser(10, 90, MAXIMUM_ATTEMPTS, "years old", out userAge);
+
+            ConsoleUtil.DisplayMessage($"Age: {salesperson.Age}");
+            
+            validResponse = ConsoleValidator.TryGetIntegerFromUser(10, 90, MAXIMUM_ATTEMPTS, "years old", out userAge,true);
             if (validResponse) salesperson.Age = userAge;
 
-            ConsoleUtil.DisplayPromptMessage("Account ID: ");
-            salesperson.AccountID = Console.ReadLine();
+            ConsoleUtil.DisplayMessage($"Account ID: {salesperson.AccountID}");
+
+            if (userResponse != "")
+                salesperson.AccountID = userResponse;
             Console.WriteLine("");
 
-            if (!ConsoleValidator.GetEnumValueFromUser<Salesperson.Ranks>(MAXIMUM_ATTEMPTS, "Rank:", out rank))
-                ConsoleUtil.DisplayMessage("Maximum attempts exceeded, returning to main menu.");
-            else
+
+            ConsoleUtil.DisplayMessage($"Rank: {salesperson.Rank}");
+
+            if (ConsoleValidator.GetEnumValueFromUser<Salesperson.Ranks>(MAXIMUM_ATTEMPTS, "Rank:", out rank,true))
                 salesperson.Rank = rank;
 
             DisplayContinuePrompt();

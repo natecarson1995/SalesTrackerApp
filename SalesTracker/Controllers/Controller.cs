@@ -105,6 +105,14 @@ namespace SalesTracker
                         DisplayEditAccountInfo();
                         break;
 
+                    case MenuOption.SaveAccountInfo:
+                        DisplaySaveAccountInfo();
+                        break;
+
+                    case MenuOption.LoadAccountInfo:
+                        DisplayLoadAccountInfo();
+                        break;
+
                     case MenuOption.DisplayInventory:
                         DisplayInventory();
                         break;
@@ -145,9 +153,7 @@ namespace SalesTracker
         /// </summary>
         private void DisplaySaveAccountInfo()
         {
-            string status = "Sucessfully Saved";
-            SaveAccountInfo();
-            _consoleView.DisplaySaveAccountInfo(status);
+            _consoleView.DisplaySaveAccountInfo(SaveAccountInfo());
         }
 
         /// <summary>
@@ -155,16 +161,14 @@ namespace SalesTracker
         /// </summary>
         private void DisplayLoadAccountInfo()
         {
-            string status = "Sucessfully Loaded";
-            LoadAccountInfo();
-            _consoleView.DisplayLoadAccountInfo(status);
+            _consoleView.DisplayLoadAccountInfo(LoadAccountInfo());
         }
         /// <summary>
         /// sets up the salesman account
         /// </summary>
         private void DisplaySetUpAccount()
         {
-            _consoleView.DisplaySetupAccount();
+            _salesPerson = _consoleView.DisplaySetupAccount();
         }
         /// <summary>
         /// add the next city location to the list of cities
@@ -251,54 +255,173 @@ namespace SalesTracker
         }
 
         /// <summary>
-        /// Saves the account info to the data log
+        /// Saves the account info to the data log, catching exceptions
         /// </summary>
-        private void SaveAccountInfo()
+        private string SaveAccountInfo()
         {
+            //
+            // make sure that file exists
+            //
+            if (!Directory.Exists("AccountInfo"))
+            {
+                try
+                {
+                    Directory.CreateDirectory("AccountInfo");
+
+                    if (!File.Exists("AccountInfo/Data.csv"))
+                        File.Create("AccountInfo/Data.csv");
+                }
+                catch (Exception)
+                {
+                    return "File/directory creation error";
+                }
+            }
+
             //
             // initialize variables
             //
             StringBuilder sb = new StringBuilder();
-            StreamWriter sw = new StreamWriter("AccountInfo/Data.csv");
+            StreamWriter sw;
+
+            try
+            {
+                sw = new StreamWriter("AccountInfo/Data.csv");
+            } catch (Exception)
+            {
+                return "File writing error";
+            }
 
             //
-            // build out the output string
+            // build out the output string, catching exceptions
             //
-            sb.AppendLine("Salesperson");
-            sb.AppendLine(_salesPerson.Serialize());
-            sb.AppendLine("Product");
-            sb.AppendLine(_salesPerson.CurrentStock.Serialize());
-            sb.AppendLine("Cities");
-            sb.AppendLine(_salesPerson.CitiesVisited.Serialize());
-            
+
+            try
+            {
+                sb.AppendLine("Salesperson");
+                sb.AppendLine(_salesPerson.Serialize());
+                sb.AppendLine("Product");
+                sb.Append(_salesPerson.CurrentStock.Serialize());
+                sb.AppendLine("Cities");
+                sb.AppendLine(_salesPerson.CitiesVisited.Serialize());
+            }
+            catch (Exception ex)
+            {
+                return ex.ToString();
+            }
+
 
             //
             // save the output string to the text file
             //
-            using (sw)
+            try
             {
-                sw.Write(sb);
+                using (sw)
+                {
+                    sw.Write(sb);
+                }
+            } catch (Exception)
+            {
+                return "File Write Error";
             }
+            return "File saved succesfully";
         }
-        /// <summary>
-        /// Loads the account info from the data log
-        /// </summary>
-        private void LoadAccountInfo()
-        {
-            StreamReader sr = new StreamReader("AccountInfo/Data.csv");
-            Queue<string> textLines = new Queue<string>();
 
-            using (sr)
+        /// <summary>
+        /// Loads the account info from the data log, validating and catching exceptions
+        /// </summary>
+        private string LoadAccountInfo()
+        {
+            //
+            // make sure file exists
+            //
+            if (Directory.Exists("AccountInfo"))
             {
-                while (!sr.EndOfStream)
-                    textLines.Enqueue(sr.ReadLine());
+                if (!File.Exists("AccountInfo/Data.csv"))
+                    return "File not found error";
+            }
+            else
+                return "Directory not found error";
+
+            //
+            // initialize variables
+            //
+            int cityLine=0;
+            StreamReader sr = new StreamReader("AccountInfo/Data.csv");
+            StringBuilder sb = new StringBuilder();
+            string[] dataInLines;
+
+            //
+            // split up textfile by lines
+            //
+            try
+            {
+                using (sr)
+                {
+                    dataInLines = sr.ReadToEnd().TrimEnd().Split('\n');
+                }
+            } catch (Exception)
+            {
+                return "File access error";
             }
 
-            textLines.Dequeue();
-            _salesPerson.Deserialize(textLines.Dequeue());
+            //
+            // Because cities and products take up multiple lines, we split them up with a line containing the word "cities"
+            //
+            for (int i = 0; i < dataInLines.Length; i++)
+            {
+                dataInLines[i] = dataInLines[i].Trim();
+                if (dataInLines[i] == "Cities")
+                {
+                    cityLine = i;
+                }
+            }
+            //
+            // deserialize salesperson
+            //
+            try
+            {
+                _salesPerson.Deserialize(dataInLines[1]);
+            } catch (Exception)
+            {
+                return "Salesperson parsing error";
+            }
 
-            textLines.Dequeue();
+            //
+            // put all the lines for products into one big string and deserialize
+            //
+            sb.Clear();
 
+            try
+            {
+                for (int i=3;i<cityLine;i++)
+                {
+                    sb.AppendLine(dataInLines[i]);
+                }
+                _salesPerson.CurrentStock.Deserialize(sb.ToString());
+            }
+            catch (Exception)
+            {
+                return "Product parsing error";
+            }
+            //
+            // put all the lines for cities into one big string and deserialize
+            //
+            sb.Clear();
+
+            try
+            {
+                for (int i=cityLine+1;i<dataInLines.Length;i++)
+                {
+                    sb.AppendLine(dataInLines[i]);
+                }
+                _salesPerson.CitiesVisited.Deserialize(sb.ToString());
+            }
+            catch (Exception)
+            {
+                return "City parsing error";
+            }
+
+            return "File loaded succesfully";
         }
         /// <summary>
         /// Calls the view inventory display

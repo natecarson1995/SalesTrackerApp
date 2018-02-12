@@ -17,7 +17,7 @@ namespace SalesTracker
         /// <param name="pluralName">plural name of item</param>
         /// <param name="validInput">indicates valid user input</param>
         /// <returns></returns>
-        public static bool TryGetIntegerFromUser(int minValue, int maxValue, int maxAttempts, string pluralName, out int userInteger)
+        public static bool TryGetIntegerFromUser(int minValue, int maxValue, int maxAttempts, string pluralName, out int userInteger, bool enterCancelsOut=false)
         {
             bool validInput = false;
             bool maxAttemptsExceeded = false;
@@ -36,6 +36,10 @@ namespace SalesTracker
                 {
                     ConsoleUtil.DisplayPromptMessage($"Enter the number, between {minValue} and {maxValue}, of {pluralName}:");
                     userResponse = Console.ReadLine();
+
+                    if (enterCancelsOut && userResponse == "")
+                        return false;
+
                     ConsoleUtil.DisplayMessage("");
 
                     //
@@ -110,7 +114,7 @@ namespace SalesTracker
         /// <param name="userPrompt"></param>
         /// <param name="returnValue"></param>
         /// <returns></returns>
-        public static bool GetEnumValueFromUser<T>(int maxAttempts, string userPrompt, out T returnValue) where T : struct, IConvertible
+        public static bool GetEnumValueFromUser<T>(int maxAttempts, string userPrompt, out T returnValue, bool enterCancelsOut = false) where T : struct, IConvertible
         {
             //
             // declare values
@@ -143,6 +147,9 @@ namespace SalesTracker
                 // get the user response
                 //
                 userResponse = ConsoleUtil.UppercaseFirst(Console.ReadLine());
+
+                if (enterCancelsOut && userResponse == "")
+                    return false;
 
                 validInput=Enum.TryParse<T>(userResponse, out returnValue);
 
