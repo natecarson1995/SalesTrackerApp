@@ -334,9 +334,9 @@ namespace SalesTracker
             //
             // make sure file exists
             //
-            if (Directory.Exists("AccountInfo"))
+            if (Directory.Exists(DataSettings.dataDir))
             {
-                if (!File.Exists("AccountInfo/Data.csv"))
+                if (!File.Exists(DataSettings.dataPath))
                     return "File not found error";
             }
             else
@@ -346,7 +346,7 @@ namespace SalesTracker
             // initialize variables
             //
             int cityLine=0;
-            StreamReader sr = new StreamReader("AccountInfo/Data.csv");
+            StreamReader sr = new StreamReader(DataSettings.dataPath);
             StringBuilder sb = new StringBuilder();
             string[] dataInLines;
 
