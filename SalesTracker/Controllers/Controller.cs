@@ -262,14 +262,14 @@ namespace SalesTracker
             //
             // make sure that file exists
             //
-            if (!Directory.Exists("AccountInfo"))
+            if (!Directory.Exists(DataSettings.dataDir))
             {
                 try
                 {
-                    Directory.CreateDirectory("AccountInfo");
+                    Directory.CreateDirectory(DataSettings.dataDir);
 
-                    if (!File.Exists("AccountInfo/Data.csv"))
-                        File.Create("AccountInfo/Data.csv");
+                    if (!File.Exists(DataSettings.dataPath))
+                        File.Create(DataSettings.dataPath);
                 }
                 catch (Exception)
                 {
@@ -285,7 +285,7 @@ namespace SalesTracker
 
             try
             {
-                sw = new StreamWriter("AccountInfo/Data.csv");
+                sw = new StreamWriter(DataSettings.dataPath);
             } catch (Exception)
             {
                 return "File writing error";

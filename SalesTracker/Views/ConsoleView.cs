@@ -347,7 +347,7 @@ namespace SalesTracker
                     default:
                         ConsoleUtil.DisplayMessage(
                             "It appears you have selected an incorrect choice." + Environment.NewLine +
-                            "Press any key to continue or the ESC key to quit the application.");
+                            "Press any key to continue or the E key to quit the application.");
 
                         userResponse = Console.ReadKey(true);
                         if (userResponse.Key == ConsoleKey.Escape)
